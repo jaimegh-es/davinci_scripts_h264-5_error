@@ -1,0 +1,63 @@
+#!/bin/bash
+# Script to convert videos to Universal MP4 (H.264 / AAC)
+# Ideal for general compatibility or converting AV1 to H.264
+
+export LC_ALL=C.UTF-8
+
+# Verify dependencies
+for cmd in ffmpeg zenity; do
+    if ! command -v $cmd &> /dev/null; then
+        notify-send "Error" "$cmd was not found. Please install it."
+        exit 1
+    fi
+done
+
+IFS=$'\n'
+
+for file in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
+    if [ -f "$file" ]; then
+        dir=$(dirname "$file")
+        filename=$(basename "$file")
+        name="${filename%.*}"
+        output_name="$dir/${name}_final.mp4"
+
+        # Avoid processing the same output file if it already exists
+        if [[ "$filename" == *"_final.mp4" ]]; then continue; fi
+
+        (
+            echo ">>> PROCESSING: $filename"
+            echo ">>> MODE: H.264 / AAC (8-bit Universal)"
+            echo "-------------------------------------------------------"
+            # ffmpeg -i: input
+            # -c:v libx264: universal video codec
+            # -preset slow: better compression
+            # -crf 22: balanced quality
+            # -pix_fmt yuv420p: maximum compatibility (8-bit)
+            # -c:a aac -b:a 192k: standard audio
+            # -movflags +faststart: optimized for web/streaming
+            ffmpeg -i "$file" -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart -y "$output_name" 2>&1
+
+            if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                echo "-------------------------------------------------------"
+                echo ">>> SUCCESSFULLY FINISHED"
+                echo ">>> FILE: $output_name"
+            else
+                echo "-------------------------------------------------------"
+                echo ">>> ERROR DURING CONVERSION"
+                # Optional: remove corrupt file if it failed
+                # rm -f "$output_name"
+            fi
+        ) | zenity --text-info \
+                   --title="Universal MP4 Converter" \
+                   --width=800 --height=500 \
+                   --auto-scroll \
+                   --ok-label="Next / Close" \
+                   --cancel-label="Cancel All"
+
+        # If user clicks cancel in Zenity, kill ffmpeg and exit
+        if [ $? -ne 0 ]; then
+            pkill -P $$ ffmpeg
+            exit 0
+        fi
+    fi
+done

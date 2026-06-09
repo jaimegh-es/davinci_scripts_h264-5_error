@@ -1,0 +1,59 @@
+#!/bin/bash
+# Script to prepare videos for DaVinci Resolve (Linux Free)
+# Converts to DNxHR HQ and PCM audio in a MOV container
+
+export LC_ALL=C.UTF-8
+
+# Verify dependencies
+for cmd in ffmpeg zenity; do
+    if ! command -v $cmd &> /dev/null; then
+        notify-send "Error" "$cmd was not found. Please install it."
+        exit 1
+    fi
+done
+
+IFS=$'\n'
+
+for file in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
+    if [ -f "$file" ]; then
+        dir=$(dirname "$file")
+        filename=$(basename "$file")
+        name="${filename%.*}"
+        output_name="$dir/${name}_davinci.mov"
+
+        # Avoid processing the same output file if it already exists
+        if [[ "$filename" == *"_davinci.mov" ]]; then continue; fi
+
+        (
+            echo ">>> PROCESSING: $filename"
+            echo ">>> MODE: DNxHR HQ / PCM Audio (Compatible with Resolve Free)"
+            echo "-------------------------------------------------------"
+            # ffmpeg -i: input
+            # -c:v dnxhd -profile:v dnxhr_hq: High quality intermediate editing codec
+            # -pix_fmt yuv422p: Required for HQ profile
+            # -c:a pcm_s16le: Uncompressed audio (Preferred by Resolve Linux)
+            ffmpeg -i "$file" -c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p -c:a pcm_s16le -y "$output_name" 2>&1
+
+            if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                echo "-------------------------------------------------------"
+                echo ">>> SUCCESSFULLY FINISHED"
+                echo ">>> FILE: $output_name"
+            else
+                echo "-------------------------------------------------------"
+                echo ">>> ERROR DURING CONVERSION"
+                # rm -f "$output_name"
+            fi
+        ) | zenity --text-info \
+                   --title="Prepare for DaVinci Resolve" \
+                   --width=800 --height=500 \
+                   --auto-scroll \
+                   --ok-label="Next / Close" \
+                   --cancel-label="Cancel All"
+
+        # If user clicks cancel in Zenity, kill ffmpeg and exit
+        if [ $? -ne 0 ]; then
+            pkill -P $$ ffmpeg
+            exit 0
+        fi
+    fi
+done
