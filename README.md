@@ -9,7 +9,7 @@ On Linux, the free version of DaVinci Resolve cannot decode/encode **H.264/H.265
 - **Prepare for DaVinci Resolve**: Converts videos (MP4, MKV, etc.) to **DNxHR HQ** with **PCM (16-bit)** audio in a `.mov` container. This is a native editing format that works perfectly in Resolve Free for Linux.
 - **Convert to Universal MP4**: Useful for converting videos with modern codecs (like AV1, which is so modern that even VLC itself can't read it.) to standard **H.264/AAC**, ideal for sharing or when you need maximum compatibility outside of Resolve.
 
-## 🛠️ Requirements
+## Requirements
 
 Make sure you have the following packages installed:
 
@@ -21,7 +21,7 @@ On Ubuntu/Debian:
 sudo apt update && sudo apt install ffmpeg zenity
 ```
 
-## 📦 Installation
+## Installation
 
 Simply run the installation script:
 

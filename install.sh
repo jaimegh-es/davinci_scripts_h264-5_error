@@ -1,6 +1,5 @@
 #!/bin/bash
 # Installation script for Nautilus Scripts (DaVinci Resolve Linux Tools)
-# Author: Gemini CLI for Jaime
 
 # Output colors
 GREEN='\033[0;32m'
